@@ -41,8 +41,7 @@ def get_is_active_choices() -> dict:
 # event methods
 async def on_ready():
     print("A WILD MISSING NO APPEARS")
-
-    
+  
 async def on_member_join(member):
     '''
     print(member.global_name)
@@ -55,10 +54,60 @@ async def on_member_join(member):
         print("Trainer already exists")
     #async await
 
+    @bot.event
+    async def on_member_join(member):
+        guild = member.guild
+        guildName = guild.name
+        dmchannel = await member.create_dm()
+        await dmchannel.send(f"Welcome to {guildName}, {member.name}!")
     '''
-    print("Create new Trainer for scoreboard")
-    print("Add Trainer role to new member")
+    print("Create new Trainer for scoreboard and add Trainer role to new member")
 
+async def on_message(message):
+    '''
+    username = message.author.display_name
+    if message.author == bot.user:
+        return
+
+    if message.content == "hello":
+        await message.channel.send(f"hi {username}")
+    '''
+    print("Do something when a message is received")
+
+async def on_raw_reaction_add(payload):
+    '''
+    messageId = payload.message_id
+
+    if messageId == 1327320666084605963:
+        emoji = payload.emoji.name
+        guildId = payload.guild_id
+        guild = bot.get_guild(guildId)
+        if emoji == "💪":
+            role = nextcord.utils.get(guild.roles, name = "muscle")
+            if role is not None:
+                member = payload.member
+                if member is not None:
+                    await member.add_roles(role)
+    '''
+    print("Do something when a reaction is added")
+
+async def on_raw_reaction_remove(payload):
+    '''
+    messageId = payload.message_id
+
+    if messageId == 1327320666084605963:
+        emoji = payload.emoji.name
+        guildId = payload.guild_id
+        guild = bot.get_guild(guildId)
+        if emoji == "💪":
+            role = nextcord.utils.get(guild.roles, name = "muscle")
+            if role is not None:
+                userId = payload.user_id
+                member = guild.get_member(userId) # funktioniert nicht, weil member nicht gefunden wird
+                if member is not None:
+                    await member.remove_roles(role)
+    '''
+    print("Do something when a reaction is removed")
 
 # trainer methods
 async def trainer_add(discord_name: str) -> bool:

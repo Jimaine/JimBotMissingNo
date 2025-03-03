@@ -7,48 +7,49 @@ from Models.JimBotSecrets import JimBotSecrets
 
 jim_bot_secrets = JimBotSecrets()
 
-class Trainer(commands.Cog):
-    # initialize trainer
+class Scoreboard(commands.Cog):
+    # initialize scoreboard
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Trainer cog loaded')
+        print('Scoreboard cog loaded')
 
-    # static methods
+    '''
+    # static methods   
     @staticmethod
     def get_trainer_choices():
         trainer_choices = []
         
-        for name, value in JimBotService.get_trainer_choices(is_only_active_trainers = False).items():
+        for name, value in JimBotService.get_trainer_choices(is_only_active_trainers = True).items():
             trainer_choices.append(discord.app_commands.Choice(name=name, value=value))
 
         return trainer_choices
-    
-    @staticmethod
-    def get_is_active_choices():
-        is_active_choices = []
-        
-        for name, value in JimBotService.get_is_active_choices().items():
-            is_active_choices.append(discord.app_commands.Choice(name=name, value=value))
 
-        return is_active_choices
-          
+    @staticmethod
+    def get_season_choices():
+        season_choices = []
+        
+        for name, value in JimBotService.get_season_choices(is_only_active_season = False).items():
+            season_choices.append(discord.app_commands.Choice(name=name, value=value))
+
+        return season_choices
+ 
     # commands
     @commands.command()
-    async def sync_trainer(self, context) -> None:
+    async def sync_scoreboard(self, context) -> None:
         try:
             fmt = await context.bot.tree.sync(guild=context.guild)
             await context.send(
-                f"Synced {len(fmt)} trainer commands to the current guild"
+                f"Synced {len(fmt)} scoreboard commands to the current guild"
             )
         except Exception as exception:
             await context.send(
                 f"Exception while syncing {exception}"
             )
-        return
-    
+        return      
+
     # app commands
     @app_commands.command(name="trainer_add", description="add a new trainer")
     @app_commands.describe(discord_name='The discord name of the new trainer')
@@ -83,6 +84,36 @@ class Trainer(commands.Cog):
             await interaction.response.send_message(f"User {trainers} successfully {status}")
         else:
             await interaction.response.send_message(f"Activity change of user {trainers} failed")
+    
+    @scoreboard.subcommand(name="battle", description = "Add a battle to the scoreboard")
+    async def scoreboard_battle(interaction: discord.Interaction, winner = trainer_active_choices, looser = trainer_active_choices, season = seasons_optional_choices):
+        is_updated = await JimBotService.scoreboard_battle(winner, looser, season)
+        
+        if is_updated:
+            seasonName = "active season" if season is None else season
+            await interaction.response.send_message(f"Scoreboard added 20 Points to {winner} as the winner and 10 Points to the opponent {looser} for the {seasonName} succesfully")
+        else:
+            await interaction.response.send_message(f"Scoreboard failed to add points for the battle")
+
+    @scoreboard.subcommand(name="trade", description = "Add a trade to the scoreboard")
+    async def scoreboard_trade(interaction: discord.Interaction, trainer_one = trainer_active_choices, trainer_two = trainer_active_choices, season = seasons_optional_choices):
+        is_updated = await JimBotService.scoreboard_trade(trainer_one, trainer_two, season)
+        
+        if is_updated:
+            seasonName = "active season" if season is None else season
+            await interaction.response.send_message(f"Scoreboard added 10 Points for a trade to {trainer_one} and {trainer_two} for the {seasonName} succesfully")
+        else:
+            await interaction.response.send_message(f"Scoreboard failed to add points for the trade")
+
+    @scoreboard.subcommand(name="attendance", description = "Add an attendance to the scoreboard")
+    async def scoreboard_attendance(interaction: discord.Interaction, trainer = trainer_active_choices, season = seasons_optional_choices):
+        is_updated = await JimBotService.scoreboard_attendance(trainer, season)
+        
+        if is_updated:
+            seasonName = "active season" if season is None else season
+            await interaction.response.send_message(f"Scoreboard added 10 Points for attendance to {trainer} for the {seasonName} succesfully")
+        else:
+            await interaction.response.send_message(f"Scoreboard failed to add points for attendance")
 
     # autocompletes
     @trainer_set_is_active.autocomplete('trainers')
@@ -91,11 +122,12 @@ class Trainer(commands.Cog):
         trainer_choices = self.get_trainer_choices()
         return [app_commands.Choice(name=trainer_choice.name, value=trainer_choice.value) for trainer_choice in trainer_choices if current.lower() in trainer_choice.name.lower()]
 
-    @trainer_set_is_active.autocomplete('is_active')
-    async def is_active_autocomplete(self, interaction: discord.Interaction, current: str):
-        is_active_choices = self.get_is_active_choices()
-        return [app_commands.Choice(name=is_active_choice.name, value=is_active_choice.value) for is_active_choice in is_active_choices if current.lower() in is_active_choice.name.lower()]
+    @trainer_set_name.autocomplete('seasons')
+    async def seasons_autocomplete(self, interaction: discord.Interaction, current: str):
+        season_choices = self.get_season_choices()
+        return [app_commands.Choice(name=season_choice.name, value=season_choice.value) for season_choice in season_choices if current.lower() in season_choice.name.lower()]
+    '''
 
         
 async def setup(bot):
-    await bot.add_cog(Trainer(bot), guilds=[discord.Object(id=jim_bot_secrets.discord_missing_no_test_guild_id)])
+    await bot.add_cog(Scoreboard(bot), guilds=[discord.Object(id=jim_bot_secrets.discord_missing_no_test_guild_id)])
