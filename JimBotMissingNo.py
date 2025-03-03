@@ -34,51 +34,16 @@ async def main():
 
 asyncio.run(main())
 
+
 '''
 # initialize slash options
 seasons_choices = discord.SlashOption(description="all seasons", required=True, choices=JimBotService.get_season_choices())
 seasons_optional_choices = discord.SlashOption(description="all seasons", required=False, choices=JimBotService.get_season_choices())
-trainer_choices = discord.SlashOption(description="all trainers", required=True, choices=JimBotService.get_trainer_choices())
 trainer_active_choices = discord.SlashOption(description="all active trainers", required=True, choices=JimBotService.get_trainer_choices(is_only_active_trainers=True))
-is_active_choices = discord.SlashOption(description="de-/activate", required=True, choices=JimBotService.get_is_active_choices())
-
-
+    
 @bot.event
 async def on_member_join(member):
     await JimBotService.on_ready(member)
-
-@bot.slash_command()
-async def trainer(interaction: discord.Interaction):
-    pass
-
-@trainer.subcommand(name="add", description = "add a new trainer")
-async def trainer_add(interaction: discord.Interaction, discord_name: str):
-    is_created = await JimBotService.trainer_add(discord_name)
-    
-    if is_created:
-        await interaction.response.send_message(f"User {discord_name} created successfully")
-    else:
-        await interaction.response.send_message(f"Creating user {discord_name} faild")
-
-@trainer.subcommand(name="set_name", description = "set the name of a pokemon trainer")
-async def trainer_update_name(interaction: discord.Interaction, new_trainer_name: str, discord_name = trainer_choices):
-    is_updated = await JimBotService.trainer_update_name(discord_name, new_trainer_name)
-
-    if is_updated:
-        await interaction.response.send_message(f"Trainername of user {discord_name} is set to {new_trainer_name}")
-    else:
-        await interaction.response.send_message(f"Updating the trainername of user {discord_name} failed")
-        
-@trainer.subcommand(name="set_activity", description = "set the activity of a pokemon trainer")
-async def trainer_update_isActive(interaction: discord.Interaction, discord_name = trainer_choices, is_active = is_active_choices):
-    is_active = True if is_active == "True" else False
-    is_updated = await JimBotService.trainer_update_isActive(discord_name, is_active)
-    
-    if is_updated:
-        status = "activated" if is_active else "deactivated"
-        await interaction.response.send_message(f"User {discord_name} successfully {status}")
-    else:
-        await interaction.response.send_message(f"Activity change of user {discord_name} failed")
 
 @bot.slash_command()
 async def season(interaction: discord.Interaction):

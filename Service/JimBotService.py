@@ -26,7 +26,7 @@ def get_trainer_choices(is_only_active_trainers: bool = False) -> dict:
         trainers = data_access.read_trainers(Trainer(is_active = is_only_active_trainers))
 
         for trainer in trainers:
-            choices[f"{trainer.discord_name} ({trainer.name})"] = trainer.discord_name
+            choices[f"{trainer.name} ({trainer.discord_name})"] = trainer.discord_name
 
     return choices
 
@@ -88,7 +88,8 @@ async def trainer_update_isActive(discord_name: str, is_active: bool) -> bool:
             if len(trainer) == 1:
                 trainer[0].is_active = is_active
                 data_access.update_trainer(trainer[0])
-                await create_scoreboard(data_access, trainer_discord_name = discord_name)
+                if trainer[0].is_active:
+                    await create_scoreboard(data_access, trainer_discord_name = discord_name)
         return True
     except Exception:
         return False
