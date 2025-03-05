@@ -27,6 +27,16 @@ async def on_ready():
 async def on_member_join(member):
     await JimBotService.on_member_join(member)
 
+# commands
+@commands.command()
+async def sync(context: commands.Context) -> None:
+    try:
+        appCommands = await bot.tree.sync(guild=context.guild)
+        await context.send(f"Synced {len(appCommands)}  app_commands to the current guild")
+    except Exception as exception:
+        await context.send(f"Exception while syncing {exception}")
+    return    
+  
 '''
 @bot.event
 async def on_message(message):

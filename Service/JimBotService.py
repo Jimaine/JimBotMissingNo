@@ -176,34 +176,37 @@ async def scoreboard_battle(winner, looser, season) -> bool:
                 if seasons is not None and len(seasons) == 1:
                     season = seasons[0].name
 
-            winner_scoreboard = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=winner))
-            looser_scoreboard = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=looser))
+            winner_scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=winner))
+            looser_scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=looser))
 
-            if winner_scoreboard is not None and len(winner_scoreboard) == 1 and looser_scoreboard is not None and len(looser_scoreboard) == 1:
-                winner_scoreboard[0].points += 20
-                looser_scoreboard[0].points += 10
-                data_access.update_scoreboard(winner_scoreboard[0])
-                data_access.update_scoreboard(looser_scoreboard[0])
+            if winner_scoreboards is not None and len(winner_scoreboards) == 1 and looser_scoreboards is not None and len(looser_scoreboards) == 1:
+                winner_scoreboards[0].points += 20
+                looser_scoreboards[0].points += 10
+                data_access.update_scoreboard(winner_scoreboards[0])
+                data_access.update_scoreboard(looser_scoreboards[0])
         return True
     except Exception:
         return False
 
 async def scoreboard_trade(trainer_one, trainer_two, season) -> bool:
     try:
+        if trainer_one == trainer_two:
+            return False
+        
         with IDataAccess(_data_access_option) as data_access:
             if season is None:    
                 seasons = data_access.read_seasons(Season(is_active = True))
                 if seasons is not None and len(seasons) == 1:
                     season = seasons[0].name
 
-            trainer_one_scoreboard = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer_one))
-            trainer_two_scoreboard = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer_two))
+            trainer_one_scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer_one))
+            trainer_two_scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer_two))
             
-            if trainer_one_scoreboard is not None and len(trainer_one_scoreboard) == 1 and trainer_two_scoreboard is not None and len(trainer_two_scoreboard) == 1:
-                trainer_one_scoreboard.points += 10
-                trainer_two_scoreboard.points += 10
-                data_access.update_scoreboard(trainer_one_scoreboard)
-                data_access.update_scoreboard(trainer_two_scoreboard)
+            if trainer_one_scoreboards is not None and len(trainer_one_scoreboards) == 1 and trainer_two_scoreboards is not None and len(trainer_two_scoreboards) == 1:
+                trainer_one_scoreboards[0].points += 10
+                trainer_two_scoreboards[0].points += 10
+                data_access.update_scoreboard(trainer_one_scoreboards[0])
+                data_access.update_scoreboard(trainer_two_scoreboards[0])
         return True
     except Exception:
         return False
@@ -216,14 +219,37 @@ async def scoreboard_attendance(trainer, season) -> bool:
                 if seasons is not None and len(seasons) == 1:
                     season = seasons[0].name
 
-            trainer_scoreboard = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer))
+            trainer_scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer))
             
-            if trainer_scoreboard is not None and len(trainer_scoreboard) == 1:
-                trainer_scoreboard[0].points += 10
-                data_access.update_scoreboard(trainer_scoreboard[0])
+            if trainer_scoreboards is not None and len(trainer_scoreboards) == 1:
+                trainer_scoreboards[0].points += 10
+                data_access.update_scoreboard(trainer_scoreboards[0])
         return True
     except Exception:
         return False
+    
+async def scoreboard_show(season) -> str:
+    scoreboard_results = ""
+    try:
+        with IDataAccess(_data_access_option) as data_access:
+            if season is None:
+                seasons = data_access.read_seasons(Season(is_active = True))
+                if seasons is not None and len(seasons) == 1:
+                    season = seasons[0].name
+
+            scoreboard_results = f"## {season}:\n\n"
+            
+            trainer_scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season))
+            if trainer_scoreboards is not None and len(trainer_scoreboards) > 0:
+                trainer_scoreboards = sorted(trainer_scoreboards, key=lambda trainer_scoreboard: trainer_scoreboard.points, reverse=True)
+                for trainer_scoreboard in trainer_scoreboards:
+                    trainers = data_access.read_trainers(Trainer(discord_name = trainer_scoreboard.trainer_discord_name))
+                    if trainers is not None and len(trainers) == 1:
+                        scoreboard_results += f"**{trainers[0].name}** *({trainers[0].discord_name})*: {trainer_scoreboard.points}\n"
+    except Exception:
+        scoreboard_results = "Scoreboard failed to show results"
+
+    return scoreboard_results
 
 # helper methods
 async def create_scoreboard(data_access: IDataAccess, season_name: str = "", trainer_discord_name: str = ""):
