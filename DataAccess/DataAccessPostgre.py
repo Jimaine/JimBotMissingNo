@@ -14,6 +14,7 @@ class DataAccessPostgre():
                     discord_name VARCHAR(255) PRIMARY KEY,
                     name VARCHAR(255),
                     is_active BOOLEAN,
+                    created_by VARCHAR(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );"""
             )
@@ -22,6 +23,7 @@ class DataAccessPostgre():
                     name VARCHAR(255) PRIMARY KEY,
                     badge_points INT,
                     is_active BOOLEAN,
+                    created_by VARCHAR(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );"""
             )
@@ -30,6 +32,7 @@ class DataAccessPostgre():
                     season_name VARCHAR(255),
                     trainer_discord_name VARCHAR(255),
                     points INT,
+                    created_by VARCHAR(255),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (season_name, trainer_discord_name),
                     FOREIGN KEY (season_name) REFERENCES Season(name),
@@ -64,9 +67,12 @@ class DataAccessPostgre():
 
     def create_trainer(self, trainer: Trainer):
         with self._connection.cursor() as cursor:
+            if len(trainer.created_by.strip()) == 0:
+                raise Exception(f"created_by is required to insert a Trainer.")
+            
             cursor.execute(f"""
-                INSERT INTO Trainer (discord_name, name, is_active)
-                VALUES ('{trainer.discord_name}', '{trainer.name}', {trainer.is_active})
+                INSERT INTO Trainer (discord_name, name, is_active, created_by)
+                VALUES ('{trainer.discord_name}', '{trainer.name}', {trainer.is_active}, '{trainer.created_by}')
                 ;"""
             )
 
@@ -136,9 +142,12 @@ class DataAccessPostgre():
 
     def create_season(self, season: Season):
         with self._connection.cursor() as cursor:
+            if len(season.created_by.strip()) == 0:
+                raise Exception(f"created_by is required to insert a Season.")
+            
             cursor.execute(f"""
-                INSERT INTO Season (name, badge_points, is_active)
-                VALUES ('{season.name}', {season.badge_points}, {season.is_active})
+                INSERT INTO Season (name, badge_points, is_active, created_by)
+                VALUES ('{season.name}', {season.badge_points}, {season.is_active}, '{season.created_by}')
                 ;"""
             )
 
@@ -208,9 +217,12 @@ class DataAccessPostgre():
 
     def create_scoreboard(self, scoreboard: Scoreboard):
         with self._connection.cursor() as cursor:
+            if len(scoreboard.created_by.strip()) == 0:
+                raise Exception(f"created_by is required to insert a Scoreboard.")
+            
             cursor.execute(f"""
-                INSERT INTO Scoreboard (season_name, trainer_discord_name, points)
-                VALUES ('{scoreboard.season_name}', '{scoreboard.trainer_discord_name}', {scoreboard.points})
+                INSERT INTO Scoreboard (season_name, trainer_discord_name, points, created_by)
+                VALUES ('{scoreboard.season_name}', '{scoreboard.trainer_discord_name}', {scoreboard.points}, '{scoreboard.created_by}')
                 ;"""
             )
 

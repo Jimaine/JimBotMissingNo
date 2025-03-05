@@ -44,7 +44,7 @@ class Season(commands.Cog):
     @app_commands.command(name="season_add", description="add a new season")
     @app_commands.describe(name='The name of the new season', badge_points='The points for the badge of the new season')
     async def season_add(self, interaction: discord.Interaction, name: str, badge_points: int):
-        is_created = await JimBotService.season_add(name, badge_points)
+        is_created = await JimBotService.season_add(name, badge_points, created_by = interaction.user.name)
         
         if is_created:
             await interaction.response.send_message(f"Season {name} created successfully")
@@ -54,7 +54,7 @@ class Season(commands.Cog):
     @app_commands.command(name="season_activate", description="activate a season")
     @app_commands.describe(seasons='The name of the active season')
     async def season_activate(self, interaction: discord.Interaction, seasons: str):
-        is_updated = await JimBotService.season_activate(seasons)
+        is_updated = await JimBotService.season_activate(seasons, created_by = interaction.user.name)
         
         if is_updated:
             await interaction.response.send_message(f"Season {seasons} succesfully is now the active season")

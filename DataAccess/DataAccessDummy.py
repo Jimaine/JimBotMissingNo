@@ -13,9 +13,9 @@ class DataAccessDummy():
         self._scoreboards = []
 
         self.start_transaction()
-        self.create_trainer(Trainer(discord_name = "AshKetchum", name = "Ash",is_active = True))
-        self.create_season(Season(name = "Mamoria City Season", badge_points = 370, is_active = True))
-        self.create_scoreboard(Scoreboard(season_name = "Mamoria City Season", trainer_discord_name = "AshKetchum", points = 420))
+        self.create_trainer(Trainer(discord_name = "AshKetchum", name = "Ash",is_active = True, created_by = "Prof. Oak"))
+        self.create_season(Season(name = "Mamoria City Season", badge_points = 370, is_active = True, created_by = "Prof. Oak"))
+        self.create_scoreboard(Scoreboard(season_name = "Mamoria City Season", trainer_discord_name = "AshKetchum", points = 420, created_by = "Prof. Oak"))
         self.commit_transaction()
 
 
@@ -39,6 +39,9 @@ class DataAccessDummy():
 
 
     def create_trainer(self, trainer: Trainer):
+        if len(trainer.created_by.strip()) == 0:
+            raise Exception(f"created_by is required to insert a Trainer.")
+            
         self._transaction_trainers.append(trainer)
 
     def read_trainers(self, trainer: Trainer) -> list[Trainer]:
@@ -71,6 +74,9 @@ class DataAccessDummy():
 
 
     def create_season(self, season: Season):
+        if len(season.created_by.strip()) == 0:
+            raise Exception(f"created_by is required to insert a Season.")
+        
         self._transaction_seasons.append(season)
 
     def read_seasons(self, season: Season) -> list[Season]:
@@ -103,6 +109,9 @@ class DataAccessDummy():
 
 
     def create_scoreboard(self, scoreboard: Scoreboard):
+        if len(scoreboard.created_by.strip()) == 0:
+            raise Exception(f"created_by is required to insert a Scoreboard.")
+        
         self._transaction_scoreboards.append(scoreboard)
 
     def read_scoreboards(self, scoreboard: Scoreboard) -> list[Scoreboard]:

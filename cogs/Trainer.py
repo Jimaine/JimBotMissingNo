@@ -53,7 +53,7 @@ class Trainer(commands.Cog):
     @app_commands.command(name="trainer_add", description="add a new trainer")
     @app_commands.describe(discord_name='The discord name of the new trainer')
     async def trainer_add(self, interaction: discord.Interaction, discord_name: str, trainer_name: str = None):
-        is_created = await JimBotService.trainer_add(discord_name)
+        is_created = await JimBotService.trainer_add(discord_name, created_by = interaction.user.name)
         
         if is_created:
             await interaction.response.send_message(f"User {discord_name} created successfully")
@@ -76,7 +76,7 @@ class Trainer(commands.Cog):
     @app_commands.describe(trainers='Trainers to choose from', is_active='set is active')
     async def trainer_set_is_active(self, interaction: discord.Interaction, trainers: str, is_active: str):
         is_active = True if is_active == "True" else False
-        is_updated = await JimBotService.trainer_update_isActive(trainers, is_active)
+        is_updated = await JimBotService.trainer_update_isActive(trainers, is_active, created_by = interaction.user.name)
         
         if is_updated:
             status = "activated" if is_active else "deactivated"

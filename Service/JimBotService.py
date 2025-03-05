@@ -110,11 +110,11 @@ async def on_raw_reaction_remove(payload):
     print("Do something when a reaction is removed")
 
 # trainer methods
-async def trainer_add(discord_name: str) -> bool:
+async def trainer_add(discord_name: str, created_by: str) -> bool:
     try:
         with IDataAccess(_data_access_option) as data_access:
-            data_access.create_trainer(Trainer(discord_name, is_active = True))
-            await create_scoreboard(data_access, trainer_discord_name = discord_name)
+            data_access.create_trainer(Trainer(discord_name, is_active = True, created_by = created_by))
+            await create_scoreboard(data_access, trainer_discord_name = discord_name, created_by = created_by)
         return True
     except Exception:
         return False
@@ -130,7 +130,7 @@ async def trainer_update_name(discord_name: str, trainer_name: str) -> bool:
     except Exception:
         return False
 
-async def trainer_update_isActive(discord_name: str, is_active: bool) -> bool:
+async def trainer_update_isActive(discord_name: str, is_active: bool, created_by: str) -> bool:
     try:
         with IDataAccess(_data_access_option) as data_access:
             trainer = data_access.read_trainers(Trainer(discord_name))
@@ -138,29 +138,29 @@ async def trainer_update_isActive(discord_name: str, is_active: bool) -> bool:
                 trainer[0].is_active = is_active
                 data_access.update_trainer(trainer[0])
                 if trainer[0].is_active:
-                    await create_scoreboard(data_access, trainer_discord_name = discord_name)
+                    await create_scoreboard(data_access, trainer_discord_name = discord_name, created_by = created_by)
         return True
     except Exception:
         return False
 
 
 # season methods
-async def season_add(name, badge_points):
+async def season_add(name: str, badge_points: int, created_by: str):
     try:
         with IDataAccess(_data_access_option) as data_access:
-            data_access.create_season(Season(name, badge_points))
+            data_access.create_season(Season(name, badge_points, created_by = created_by))
         return True
     except Exception:
         return False
 
-async def season_activate(name):
+async def season_activate(name: str, created_by: str):
     try:
         with IDataAccess(_data_access_option) as data_access:
             seasons = data_access.read_seasons(None)
             for season in seasons:
                 season.is_active = True if season.name == name else False
                 data_access.update_season(season)
-                await create_scoreboard(data_access, season_name = name)
+                await create_scoreboard(data_access, season_name = name, created_by = created_by)
             seasons = data_access.read_seasons(Season(is_active = True))
             return len(seasons) == 1
     except Exception:
@@ -168,7 +168,7 @@ async def season_activate(name):
 
 
 # scoreboard methods
-async def scoreboard_battle(winner, looser, season) -> bool:
+async def scoreboard_battle(winner: str, looser: str, season: str) -> bool:
     try:
         with IDataAccess(_data_access_option) as data_access:
             if season is None:
@@ -188,7 +188,7 @@ async def scoreboard_battle(winner, looser, season) -> bool:
     except Exception:
         return False
 
-async def scoreboard_trade(trainer_one, trainer_two, season) -> bool:
+async def scoreboard_trade(trainer_one: str, trainer_two: str, season: str) -> bool:
     try:
         if trainer_one == trainer_two:
             return False
@@ -211,7 +211,7 @@ async def scoreboard_trade(trainer_one, trainer_two, season) -> bool:
     except Exception:
         return False
     
-async def scoreboard_attendance(trainer, season) -> bool:
+async def scoreboard_attendance(trainer: str, season: str) -> bool:
     try:
         with IDataAccess(_data_access_option) as data_access:
             if season is None:
@@ -228,7 +228,7 @@ async def scoreboard_attendance(trainer, season) -> bool:
     except Exception:
         return False
     
-async def scoreboard_show(season) -> str:
+async def scoreboard_show(season: str) -> str:
     scoreboard_results = ""
     try:
         with IDataAccess(_data_access_option) as data_access:
@@ -252,7 +252,7 @@ async def scoreboard_show(season) -> str:
     return scoreboard_results
 
 # helper methods
-async def create_scoreboard(data_access: IDataAccess, season_name: str = "", trainer_discord_name: str = ""):
+async def create_scoreboard(data_access: IDataAccess, season_name: str = "", trainer_discord_name: str = "", created_by: str = ""):
     if len(season_name.strip()) <= 0:
         seasons = data_access.read_seasons(Season(is_active = True))
         if len(seasons) == 1:
@@ -267,7 +267,7 @@ async def create_scoreboard(data_access: IDataAccess, season_name: str = "", tra
         trainers = data_access.read_trainers(Trainer(is_active = True))
 
     for trainer in trainers:
-        scoreboard = Scoreboard(season_name, trainer_discord_name = trainer.discord_name)
+        scoreboard = Scoreboard(season_name, trainer_discord_name = trainer.discord_name, created_by = created_by)
         existing_scoreboard_of_trainer = data_access.read_scoreboards(scoreboard)
         if len(existing_scoreboard_of_trainer) == 0:
             data_access.create_scoreboard(scoreboard)

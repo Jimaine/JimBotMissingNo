@@ -27,7 +27,7 @@ def test_data_access_for_one_option(dataAccess:IDataAccess):
 
     # Create a new trainer
     trainer_discord_name = "MistyAzuria"
-    trainer = dataAccess.create_trainer(Trainer(discord_name = trainer_discord_name))
+    trainer = dataAccess.create_trainer(Trainer(discord_name = trainer_discord_name, created_by = "Dummy"))
     trainers = dataAccess.read_trainers(None)
     print(f"Trainer: {len(trainers)}")
 
@@ -41,7 +41,7 @@ def test_data_access_for_one_option(dataAccess:IDataAccess):
 
     # Create a new season
     season_name = "Azuria City Season"
-    season = dataAccess.create_season(Season(name = season_name))
+    season = dataAccess.create_season(Season(name = season_name, created_by = "Dummy"))
     seasons = dataAccess.read_seasons(None)
     print(f"Season: {len(seasons)}")
 
@@ -54,7 +54,7 @@ def test_data_access_for_one_option(dataAccess:IDataAccess):
     print(f"Season: {len(seasons)}")
     
     # Create a new scoreboard
-    dataAccess.create_scoreboard(Scoreboard(season_name, trainer_discord_name))
+    dataAccess.create_scoreboard(Scoreboard(season_name, trainer_discord_name, created_by = "Dummy"))
     scoreboards = dataAccess.read_scoreboards(None)
     print(f"Scoreboard: {len(scoreboards)}")
 
