@@ -1,3 +1,4 @@
+from datetime import datetime
 from Models.Enum.DataAccessOption import DataAccessOption
 from DataAccess.IDataAccess import IDataAccess
 from Models.Enum.ScoreboardAction import ScoreboardAction
@@ -28,7 +29,7 @@ def test_data_access_for_one_option(dataAccess:IDataAccess):
 
     # Create a new trainer
     trainer_discord_name = "MistyAzuria"
-    trainer = dataAccess.create_trainer(Trainer(discord_name = trainer_discord_name, created_by = "Dummy"))
+    trainer = dataAccess.create_trainer(Trainer(discord_name = trainer_discord_name, created_by = "Dummy", created_at = datetime.now()))
     trainers = dataAccess.read_trainers(None)
     print(f"Trainer: {len(trainers)}")
 
@@ -42,7 +43,7 @@ def test_data_access_for_one_option(dataAccess:IDataAccess):
 
     # Create a new season
     season_name = "Azuria City Season"
-    season = dataAccess.create_season(Season(name = season_name, created_by = "Dummy"))
+    season = dataAccess.create_season(Season(name = season_name, created_by = "Dummy", created_at = datetime.now()))
     seasons = dataAccess.read_seasons(None)
     print(f"Season: {len(seasons)}")
 
@@ -55,13 +56,13 @@ def test_data_access_for_one_option(dataAccess:IDataAccess):
     print(f"Season: {len(seasons)}")
     
     # Create a new scoreboard
-    dataAccess.create_scoreboard(Scoreboard(season_name, trainer_discord_name, action = ScoreboardAction.ATTENDANCE, created_by = "Dummy"))
-    scoreboards = dataAccess.read_scoreboards(None)
+    dataAccess.create_scoreboard(Scoreboard(season_name, trainer_discord_name, action = ScoreboardAction.ATTENDANCE, created_by = "Dummy", created_at = datetime.now()))
+    scoreboards = dataAccess.read_scoreboards(Scoreboard(season_name, trainer_discord_name, action = ScoreboardAction.ATTENDANCE))
     print(f"Scoreboard: {len(scoreboards)}")
 
 
     # Delete the scoreboard
-    dataAccess.delete_scoreboard(Scoreboard(season_name, trainer_discord_name, action = ScoreboardAction.ATTENDANCE))
+    dataAccess.delete_scoreboard(scoreboards[0])
     scoreboards = dataAccess.read_scoreboards(None)
     print(f"Scoreboard: {len(scoreboards)}")
 

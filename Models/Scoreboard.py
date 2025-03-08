@@ -1,13 +1,15 @@
 from Models.Enum.ScoreboardAction import ScoreboardAction
+from datetime import datetime
 
 
 class Scoreboard: 
-    def __init__(self, season_name:str = "", trainer_discord_name:str = "", action:ScoreboardAction = ScoreboardAction.NONE, points:int = 0, created_by:str = ""): 
+    def __init__(self, season_name:str = "", trainer_discord_name:str = "", action:ScoreboardAction = ScoreboardAction.NONE, points:int = 0, created_by:str = "", created_at: datetime = None): 
         self._season_name = season_name
         self._trainer_discord_name = trainer_discord_name
         self._action = action
         self._points = points
         self._created_by = created_by
+        self._created_at = created_at
 
     def __str__(self):
         return f"In {self._season_name} the user {self._trainer_discord_name} got {self._points} points"
@@ -65,3 +67,14 @@ class Scoreboard:
         if not isinstance(new_value, str):
             raise TypeError("Expected a string for created_by")
         self._created_by = str(new_value) 
+
+
+    @property
+    def created_at(self):
+        return self._created_at
+
+    @created_at.setter
+    def created_at(self, new_value):
+        if not isinstance(new_value, datetime):
+            raise TypeError("Expected a datetime object for created_at")
+        self._created_at = new_value

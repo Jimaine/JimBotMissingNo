@@ -131,7 +131,9 @@ class DataAccessPostgre():
                 SELECT
                     discord_name,
                     name,
-                    is_active
+                    is_active,
+                    created_by,
+                    created_at
                 FROM Trainer
                 WHERE 1=1
                 {search_discord_name}
@@ -142,7 +144,7 @@ class DataAccessPostgre():
             )
 
             for row in cursor.fetchall():
-                trainers.append(Trainer(discord_name=row[0], name=row[1], is_active=row[2]))
+                trainers.append(Trainer(discord_name=row[0], name=row[1], is_active=row[2], created_by=row[3], created_at=row[4]))
             
         return trainers
 
@@ -206,7 +208,9 @@ class DataAccessPostgre():
                 SELECT
                     name,
                     badge_points,
-                    is_active
+                    is_active,
+                    created_by,
+                    created_at
                 FROM Season
                 WHERE 1=1
                 {search_name}
@@ -217,7 +221,7 @@ class DataAccessPostgre():
             )
 
             for row in cursor.fetchall():
-                seasons.append(Season(name=row[0], badge_points=row[1], is_active=row[2]))
+                seasons.append(Season(name=row[0], badge_points=row[1], is_active=row[2], created_by=row[3], created_at=row[4]))
             
         return seasons
 
@@ -275,14 +279,16 @@ class DataAccessPostgre():
                 if len(scoreboard.trainer_discord_name.strip()) > 0:
                     search_trainer_discord_name = f"  AND Scoreboard.trainer_discord_name = '{scoreboard.trainer_discord_name}'"
                 if scoreboard.action != ScoreboardAction.NONE:
-                    search_actions = f"  AND Action.name = '{scoreboard.action}'"
+                    search_actions = f"  AND Action.name = '{scoreboard.action.name}'"
 
             cursor.execute(f"""
                 SELECT
                     Scoreboard.season_name,
                     Scoreboard.trainer_discord_name,
                     Action.name,
-                    Action.points
+                    Action.points,
+                    Scoreboard.created_by,
+                    Scoreboard.created_at
                 FROM Scoreboard
                     INNER JOIN Action ON Scoreboard.action_name = Action.name
                 WHERE 1=1
@@ -294,7 +300,7 @@ class DataAccessPostgre():
             )
 
             for row in cursor.fetchall():
-                scoreboards.append(Scoreboard(season_name=row[0], trainer_discord_name=row[1], action=row[2], points=row[3]))
+                scoreboards.append(Scoreboard(season_name=row[0], trainer_discord_name=row[1], action=ScoreboardAction[row[2]], points=row[3], created_by=row[4], created_at=row[5]))
             
         return scoreboards
 
@@ -306,14 +312,7 @@ class DataAccessPostgre():
                     AND season_name = '{scoreboard.season_name}'
                     AND trainer_discord_name = '{scoreboard.trainer_discord_name}'
                     AND action_name = '{scoreboard.action.name}'
-                    AND created_at = (
-                        SELECT MAX(created_at) 
-                        FROM Scoreboard 
-                        WHERE 1=1
-                            AND season_name = '{scoreboard.season_name}' 
-                            AND trainer_discord_name = '{scoreboard.trainer_discord_name}'
-                            AND action_name = '{scoreboard.action.name}'
-                    )
+                    AND created_at = '{scoreboard.created_at}'
                 ;"""
             )
 

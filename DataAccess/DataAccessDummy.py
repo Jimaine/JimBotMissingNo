@@ -2,6 +2,7 @@ from Models.Enum.ScoreboardAction import ScoreboardAction
 from Models.Season import Season
 from Models.Trainer import Trainer
 from Models.Scoreboard import Scoreboard
+from datetime import datetime
 
 
 class DataAccessDummy():
@@ -21,13 +22,13 @@ class DataAccessDummy():
 
         self.start_transaction()
         self.create_trainer(
-            Trainer(discord_name = "AshKetchum", name = "Ash",is_active = True, created_by = "Prof. Oak")
+            Trainer(discord_name = "AshKetchum", name = "Ash",is_active = True, created_by = "Prof. Oak", created_at = "2021-01-01")
         )
         self.create_season(
-            Season(name = "Mamoria City Season", badge_points = 370, is_active = True, created_by = "Prof. Oak")
+            Season(name = "Mamoria City Season", badge_points = 370, is_active = True, created_by = "Prof. Oak", created_at = "2021-01-01")
         )
         self.create_scoreboard(
-            Scoreboard(season_name = "Mamoria City Season", trainer_discord_name = "AshKetchum", action = ScoreboardAction.ATTENDANCE, created_by = "Prof. Oak")
+            Scoreboard(season_name = "Mamoria City Season", trainer_discord_name = "AshKetchum", action = ScoreboardAction.ATTENDANCE, created_by = "Prof. Oak", created_at = "2021-01-01")
         )
         self.commit_transaction()
 
@@ -54,7 +55,9 @@ class DataAccessDummy():
     def create_trainer(self, trainer: Trainer):
         if len(trainer.created_by.strip()) == 0:
             raise Exception(f"created_by is required to insert a Trainer.")
-            
+        
+        trainer.created_at = datetime.now()
+
         self._transaction_trainers.append(trainer)
 
     def read_trainers(self, trainer: Trainer) -> list[Trainer]:
@@ -89,6 +92,8 @@ class DataAccessDummy():
     def create_season(self, season: Season):
         if len(season.created_by.strip()) == 0:
             raise Exception(f"created_by is required to insert a Season.")
+        
+        season.created_at = datetime.now()
         
         self._transaction_seasons.append(season)
 
@@ -125,6 +130,7 @@ class DataAccessDummy():
         if len(scoreboard.created_by.strip()) == 0:
             raise Exception(f"created_by is required to insert a Scoreboard.")
         
+        scoreboard.created_at = datetime.now()
         scoreboard.points = self._actions[scoreboard.action]
 
         self._transaction_scoreboards.append(scoreboard)
@@ -152,5 +158,6 @@ class DataAccessDummy():
             if (_scoreboard.season_name == scoreboard.season_name 
                     and _scoreboard.trainer_discord_name == scoreboard.trainer_discord_name 
                     and _scoreboard.action == scoreboard.action
+                    and _scoreboard.created_at == scoreboard.created_at
                     ):
                 self._transaction_scoreboards.remove(_scoreboard)
