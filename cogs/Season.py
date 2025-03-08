@@ -54,7 +54,7 @@ class Season(commands.Cog):
     @app_commands.command(name="season_activate", description="activate a season")
     @app_commands.describe(seasons='The name of the active season')
     async def season_activate(self, interaction: discord.Interaction, seasons: str):
-        is_updated = await JimBotService.season_activate(seasons, created_by = interaction.user.name)
+        is_updated = await JimBotService.season_activate(seasons)
         
         if is_updated:
             await interaction.response.send_message(f"Season {seasons} succesfully is now the active season")

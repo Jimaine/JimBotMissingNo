@@ -76,7 +76,7 @@ class Trainer(commands.Cog):
     @app_commands.describe(trainers='Trainers to choose from', is_active='set is active')
     async def trainer_set_is_active(self, interaction: discord.Interaction, trainers: str, is_active: str):
         is_active = True if is_active == "True" else False
-        is_updated = await JimBotService.trainer_update_isActive(trainers, is_active, created_by = interaction.user.name)
+        is_updated = await JimBotService.trainer_update_isActive(trainers, is_active)
         
         if is_updated:
             status = "activated" if is_active else "deactivated"

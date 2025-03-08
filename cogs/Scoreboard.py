@@ -51,37 +51,24 @@ class Scoreboard(commands.Cog):
 
     # app commands    
     @app_commands.command(name="scoreboard_battle", description="Add a battle to the scoreboard")
-    @app_commands.describe(winner='Trainers who wins', looser='Trainers to choose from', season='Seasons to choose from')
-    async def scoreboard_battle(self, interaction: discord.Interaction, winner: str, looser: str, season: str = None):
-        is_updated = await JimBotService.scoreboard_battle(winner, looser, season)
+    @app_commands.describe(winner='Trainers who wins', looser='Trainers to choose from')
+    async def scoreboard_battle(self, interaction: discord.Interaction, winner: str, looser: str):
+        is_updated = await JimBotService.scoreboard_battle(winner, looser, created_by = interaction.user.name)
         
         if is_updated:
-            seasonName = "active season" if season is None else season
-            await interaction.response.send_message(f"Scoreboard added 20 Points to {winner} as the winner and 10 Points to the opponent {looser} for the {seasonName} succesfully")
+            await interaction.response.send_message(f"Scoreboard succeeded to add Points to {winner} as the winner and to the opponent {looser} for the active season")
         else:
             await interaction.response.send_message(f"Scoreboard failed to add points for the battle")
 
     @app_commands.command(name="scoreboard_trade", description="Add a trade to the scoreboard")
-    @app_commands.describe(trainer_one='Trainers to choose from', trainer_two='Trainers to choose from', season='Seasons to choose from')
-    async def scoreboard_trade(self, interaction: discord.Interaction, trainer_one: str, trainer_two: str, season: str = None):
-        is_updated = await JimBotService.scoreboard_trade(trainer_one, trainer_two, season)
+    @app_commands.describe(trainer_one='Trainers to choose from', trainer_two='Trainers to choose from')
+    async def scoreboard_trade(self, interaction: discord.Interaction, trainer_one: str, trainer_two: str):
+        is_updated = await JimBotService.scoreboard_trade(trainer_one, trainer_two, created_by = interaction.user.name)
         
         if is_updated:
-            seasonName = "active season" if season is None else season
-            await interaction.response.send_message(f"Scoreboard added 10 Points for a trade to {trainer_one} and {trainer_two} for the {seasonName} succesfully")
+            await interaction.response.send_message(f"Scoreboard succeeded to add Points to {trainer_one} and {trainer_two} as Traders for the active season")
         else:
             await interaction.response.send_message(f"Scoreboard failed to add points for the trade")
-
-    @app_commands.command(name="scoreboard_attendance", description="Add an attendance to the scoreboard")
-    @app_commands.describe(trainer='Trainers to choose from', season='Seasons to choose from')
-    async def scoreboard_attendance(self, interaction: discord.Interaction, trainer: str, season: str = None):
-        is_updated = await JimBotService.scoreboard_attendance(trainer, season)
-        
-        if is_updated:
-            seasonName = "active season" if season is None else season
-            await interaction.response.send_message(f"Scoreboard added 10 Points for attendance to {trainer} for the {seasonName} succesfully")
-        else:
-            await interaction.response.send_message(f"Scoreboard failed to add points for attendance")
 
     @app_commands.command(name="scoreboard_show", description="Shows the results of a season")
     @app_commands.describe(season='Seasons to choose from')
@@ -95,14 +82,10 @@ class Scoreboard(commands.Cog):
     @scoreboard_battle.autocomplete('looser')
     @scoreboard_trade.autocomplete('trainer_one')
     @scoreboard_trade.autocomplete('trainer_two')
-    @scoreboard_attendance.autocomplete('trainer')
     async def trainers_autocomplete(self, interaction: discord.Interaction, current: str):
         trainer_choices = self.get_trainer_choices()
         return [app_commands.Choice(name=trainer_choice.name, value=trainer_choice.value) for trainer_choice in trainer_choices if current.lower() in trainer_choice.name.lower()]
 
-    @scoreboard_battle.autocomplete('season')
-    @scoreboard_trade.autocomplete('season')
-    @scoreboard_attendance.autocomplete('season')
     @scoreboard_show.autocomplete('season')
     async def seasons_autocomplete(self, interaction: discord.Interaction, current: str):
         season_choices = self.get_season_choices()

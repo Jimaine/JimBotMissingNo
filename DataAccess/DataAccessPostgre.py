@@ -295,7 +295,7 @@ class DataAccessPostgre():
                 {search_season_name}
                 {search_trainer_discord_name}
                 {search_actions}
-                ORDER BY Scoreboard.created_at ASC
+                ORDER BY Scoreboard.created_at DESC
                 ;"""
             )
 

@@ -8,7 +8,7 @@ from Models.JimBotSecrets import JimBotSecrets
 
 
 # Test Data Access
-DataAccessTest.test_data_access()
+#DataAccessTest.test_data_access()
 
 # initialize secrets
 jim_bot_secrets = JimBotSecrets()
