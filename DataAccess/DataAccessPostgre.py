@@ -1,3 +1,4 @@
+from Models.Enum.ScoreboardAction import ScoreboardAction
 from Models.Season import Season
 from Models.Trainer import Trainer
 from Models.Scoreboard import Scoreboard
@@ -11,36 +12,67 @@ class DataAccessPostgre():
         with self._connection.cursor() as cursor:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS Trainer (
-                    discord_name VARCHAR(255) PRIMARY KEY,
-                    name VARCHAR(255),
-                    is_active BOOLEAN,
-                    created_by VARCHAR(255),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    discord_name VARCHAR(100) PRIMARY KEY NOT NULL,
+                    name VARCHAR(100),
+                    is_active BOOLEAN NOT NULL,
+                    created_by VARCHAR(100) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
                 );"""
             )
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS Season (
-                    name VARCHAR(255) PRIMARY KEY,
-                    badge_points INT,
-                    is_active BOOLEAN,
-                    created_by VARCHAR(255),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    name VARCHAR(150) PRIMARY KEY NOT NULL,
+                    badge_points INT NOT NULL,
+                    is_active BOOLEAN NOT NULL,
+                    created_by VARCHAR(100) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
                 );"""
             )
             cursor.execute("""
+                CREATE TABLE IF NOT EXISTS Action (
+                    name VARCHAR(50) PRIMARY KEY NOT NULL,
+                    points INT NOT NULL,
+                    created_by VARCHAR(100) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+                );
+                INSERT INTO Action (name, points, created_by)
+                VALUES ('ATTENDANCE', 10, 'Initial')
+                ON CONFLICT (name) DO NOTHING;
+                INSERT INTO Action (name, points, created_by)
+                VALUES ('TRADE', 10, 'Initial')
+                ON CONFLICT (name) DO NOTHING;
+                INSERT INTO Action (name, points, created_by)
+                VALUES ('BATTLE_WIN', 20, 'Initial')
+                ON CONFLICT (name) DO NOTHING;
+                INSERT INTO Action (name, points, created_by)
+                VALUES ('BATTLE_LOOSE', 10, 'Initial')
+                ON CONFLICT (name) DO NOTHING;"""
+            )
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS Scoreboard (
-                    season_name VARCHAR(255),
-                    trainer_discord_name VARCHAR(255),
-                    points INT,
-                    created_by VARCHAR(255),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (season_name, trainer_discord_name),
+                    season_name VARCHAR(150) NOT NULL,
+                    trainer_discord_name VARCHAR(100) NOT NULL,
+                    action_name VARCHAR(50) NOT NULL,
+                    created_by VARCHAR(100) NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
                     FOREIGN KEY (season_name) REFERENCES Season(name),
-                    FOREIGN KEY (trainer_discord_name) REFERENCES Trainer(discord_name)
+                    FOREIGN KEY (trainer_discord_name) REFERENCES Trainer(discord_name),
+                    FOREIGN KEY (action_name) REFERENCES Action(name)
+                );
+                CREATE INDEX IF NOT EXISTS idx_scoreboard_season_trainer_action ON Scoreboard (
+                    season_name, 
+                    trainer_discord_name, 
+                    action_name
+                );"""
+            )
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_scoreboard_season_trainer_action ON Scoreboard (
+                    season_name, 
+                    trainer_discord_name, 
+                    action_name
                 );"""
             )
         self.commit_transaction()
-
 
     def start_transaction(self):
         jimBotSecrets = JimBotSecrets()
@@ -221,8 +253,8 @@ class DataAccessPostgre():
                 raise Exception(f"created_by is required to insert a Scoreboard.")
             
             cursor.execute(f"""
-                INSERT INTO Scoreboard (season_name, trainer_discord_name, points, created_by)
-                VALUES ('{scoreboard.season_name}', '{scoreboard.trainer_discord_name}', {scoreboard.points}, '{scoreboard.created_by}')
+                INSERT INTO Scoreboard (season_name, trainer_discord_name, action_name, created_by)
+                VALUES ('{scoreboard.season_name}', '{scoreboard.trainer_discord_name}', '{scoreboard.action.name}', '{scoreboard.created_by}')
                 ;"""
             )
 
@@ -235,48 +267,36 @@ class DataAccessPostgre():
         with self._connection.cursor() as cursor:
             search_season_name = ""
             search_trainer_discord_name = ""
-            search_points = ""
+            search_actions = ""
 
             if scoreboard is not None:
                 if len(scoreboard.season_name.strip()) > 0:
-                    search_season_name = f"  AND season_name = '{scoreboard.season_name}'"
+                    search_season_name = f"  AND Scoreboard.season_name = '{scoreboard.season_name}'"
                 if len(scoreboard.trainer_discord_name.strip()) > 0:
-                    search_trainer_discord_name = f"  AND trainer_discord_name = '{scoreboard.trainer_discord_name}'"
-                if scoreboard.points > 0:
-                    search_points = f"  AND points = {scoreboard.points}"
+                    search_trainer_discord_name = f"  AND Scoreboard.trainer_discord_name = '{scoreboard.trainer_discord_name}'"
+                if scoreboard.action != ScoreboardAction.NONE:
+                    search_actions = f"  AND Action.name = '{scoreboard.action}'"
 
             cursor.execute(f"""
                 SELECT
-                    season_name,
-                    trainer_discord_name,
-                    points
+                    Scoreboard.season_name,
+                    Scoreboard.trainer_discord_name,
+                    Action.name,
+                    Action.points
                 FROM Scoreboard
+                    INNER JOIN Action ON Scoreboard.action_name = Action.name
                 WHERE 1=1
                 {search_season_name}
                 {search_trainer_discord_name}
-                {search_points}
-                ORDER BY created_at ASC
+                {search_actions}
+                ORDER BY Scoreboard.created_at ASC
                 ;"""
             )
 
             for row in cursor.fetchall():
-                scoreboards.append(Scoreboard(season_name=row[0], trainer_discord_name=row[1], points=row[2]))
+                scoreboards.append(Scoreboard(season_name=row[0], trainer_discord_name=row[1], action=row[2], points=row[3]))
             
         return scoreboards
-
-    def update_scoreboard(self, scoreboard: Scoreboard):
-        with self._connection.cursor() as cursor:
-            cursor.execute(f"""
-                UPDATE Scoreboard
-                SET points = {scoreboard.points}
-                WHERE 1=1
-                    AND season_name = '{scoreboard.season_name}'
-                    AND trainer_discord_name = '{scoreboard.trainer_discord_name}'
-                ;"""
-            )
-
-            if cursor.rowcount != 1:
-                raise Exception(f"update rowcount of Scoreboard {scoreboard.season_name}, {scoreboard.trainer_discord_name} return {cursor.rowcount}.")
 
     def delete_scoreboard(self, scoreboard: Scoreboard):
         with self._connection.cursor() as cursor:
@@ -285,6 +305,15 @@ class DataAccessPostgre():
                 WHERE 1=1
                     AND season_name = '{scoreboard.season_name}'
                     AND trainer_discord_name = '{scoreboard.trainer_discord_name}'
+                    AND action_name = '{scoreboard.action.name}'
+                    AND created_at = (
+                        SELECT MAX(created_at) 
+                        FROM Scoreboard 
+                        WHERE 1=1
+                            AND season_name = '{scoreboard.season_name}' 
+                            AND trainer_discord_name = '{scoreboard.trainer_discord_name}'
+                            AND action_name = '{scoreboard.action.name}'
+                    )
                 ;"""
             )
 

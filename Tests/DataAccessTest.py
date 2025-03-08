@@ -1,5 +1,6 @@
 from Models.Enum.DataAccessOption import DataAccessOption
 from DataAccess.IDataAccess import IDataAccess
+from Models.Enum.ScoreboardAction import ScoreboardAction
 from Models.Season import Season
 from Models.Trainer import Trainer
 from Models.Scoreboard import Scoreboard
@@ -54,20 +55,13 @@ def test_data_access_for_one_option(dataAccess:IDataAccess):
     print(f"Season: {len(seasons)}")
     
     # Create a new scoreboard
-    dataAccess.create_scoreboard(Scoreboard(season_name, trainer_discord_name, created_by = "Dummy"))
-    scoreboards = dataAccess.read_scoreboards(None)
-    print(f"Scoreboard: {len(scoreboards)}")
-
-    # Update the scoreboard
-    scoreboard = dataAccess.read_scoreboards(Scoreboard(season_name, trainer_discord_name))
-    scoreboard[0].points = 100
-    dataAccess.update_scoreboard(scoreboard[0])
+    dataAccess.create_scoreboard(Scoreboard(season_name, trainer_discord_name, action = ScoreboardAction.ATTENDANCE, created_by = "Dummy"))
     scoreboards = dataAccess.read_scoreboards(None)
     print(f"Scoreboard: {len(scoreboards)}")
 
 
     # Delete the scoreboard
-    dataAccess.delete_scoreboard(Scoreboard(season_name, trainer_discord_name))
+    dataAccess.delete_scoreboard(Scoreboard(season_name, trainer_discord_name, action = ScoreboardAction.ATTENDANCE))
     scoreboards = dataAccess.read_scoreboards(None)
     print(f"Scoreboard: {len(scoreboards)}")
 

@@ -1,7 +1,11 @@
+from Models.Enum.ScoreboardAction import ScoreboardAction
+
+
 class Scoreboard: 
-    def __init__(self, season_name:str = "", trainer_discord_name:str = "", points:int = 0, created_by:str = ""): 
+    def __init__(self, season_name:str = "", trainer_discord_name:str = "", action:ScoreboardAction = ScoreboardAction.NONE, points:int = 0, created_by:str = ""): 
         self._season_name = season_name
         self._trainer_discord_name = trainer_discord_name
+        self._action = action
         self._points = points
         self._created_by = created_by
 
@@ -28,6 +32,17 @@ class Scoreboard:
         if not isinstance(new_value, str):
             raise TypeError("Expected a string for season_name")
         self._season_name = str(new_value)
+    
+
+    @property
+    def action(self): 
+        return ScoreboardAction(self._action)
+    
+    @action.setter
+    def action(self, new_value):
+        if not isinstance(new_value, ScoreboardAction):
+            raise TypeError("Expected a string for action")
+        self._action = ScoreboardAction(new_value)
     
 
     @property

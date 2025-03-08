@@ -1,3 +1,4 @@
+from Models.Enum.ScoreboardAction import ScoreboardAction
 from Models.Season import Season
 from Models.Trainer import Trainer
 from Models.Scoreboard import Scoreboard
@@ -11,11 +12,23 @@ class DataAccessDummy():
         self._seasons = []
         self._scoreboards = [Scoreboard]
         self._scoreboards = []
+        self._actions = {
+            ScoreboardAction.NONE: 0, 
+            ScoreboardAction.ATTENDANCE: 10, 
+            ScoreboardAction.TRADE: 10, 
+            ScoreboardAction.BATTLE_WIN: 20, 
+            ScoreboardAction.BATTLE_LOOSE: 10}
 
         self.start_transaction()
-        self.create_trainer(Trainer(discord_name = "AshKetchum", name = "Ash",is_active = True, created_by = "Prof. Oak"))
-        self.create_season(Season(name = "Mamoria City Season", badge_points = 370, is_active = True, created_by = "Prof. Oak"))
-        self.create_scoreboard(Scoreboard(season_name = "Mamoria City Season", trainer_discord_name = "AshKetchum", points = 420, created_by = "Prof. Oak"))
+        self.create_trainer(
+            Trainer(discord_name = "AshKetchum", name = "Ash",is_active = True, created_by = "Prof. Oak")
+        )
+        self.create_season(
+            Season(name = "Mamoria City Season", badge_points = 370, is_active = True, created_by = "Prof. Oak")
+        )
+        self.create_scoreboard(
+            Scoreboard(season_name = "Mamoria City Season", trainer_discord_name = "AshKetchum", action = ScoreboardAction.ATTENDANCE, created_by = "Prof. Oak")
+        )
         self.commit_transaction()
 
 
@@ -112,6 +125,8 @@ class DataAccessDummy():
         if len(scoreboard.created_by.strip()) == 0:
             raise Exception(f"created_by is required to insert a Scoreboard.")
         
+        scoreboard.points = self._actions[scoreboard.action]
+
         self._transaction_scoreboards.append(scoreboard)
 
     def read_scoreboards(self, scoreboard: Scoreboard) -> list[Scoreboard]:
@@ -121,23 +136,21 @@ class DataAccessDummy():
             scoreboards = []
             searchSeasonName = len(scoreboard.season_name.strip()) > 0
             searchTrainerDiscordName = len(scoreboard.trainer_discord_name.strip()) > 0
-            searchIsActive = scoreboard.points > 0
+            searchAction = scoreboard.action != ScoreboardAction.NONE
             for _scoreboard in self._transaction_scoreboards:
                 if (
                         (searchSeasonName == False or _scoreboard.season_name == scoreboard.season_name)
                         and (searchTrainerDiscordName == False or _scoreboard.trainer_discord_name == scoreboard.trainer_discord_name)
-                        and (searchIsActive == False or _scoreboard.points == scoreboard.points)
+                        and (searchAction == False or _scoreboard.action == scoreboard.action)
                         ):
                     scoreboards.append(_scoreboard)
 
             return scoreboards
 
-    def update_scoreboard(self, scoreboard: Scoreboard):
-        for _scoreboard in self._transaction_scoreboards:
-            if _scoreboard.season_name == scoreboard.season_name and _scoreboard.trainer_discord_name == scoreboard.trainer_discord_name:
-                _scoreboard = scoreboard
-
     def delete_scoreboard(self, scoreboard: Scoreboard):
         for _scoreboard in self._transaction_scoreboards:
-            if _scoreboard.season_name == scoreboard.season_name and _scoreboard.trainer_discord_name == scoreboard.trainer_discord_name:
+            if (_scoreboard.season_name == scoreboard.season_name 
+                    and _scoreboard.trainer_discord_name == scoreboard.trainer_discord_name 
+                    and _scoreboard.action == scoreboard.action
+                    ):
                 self._transaction_scoreboards.remove(_scoreboard)

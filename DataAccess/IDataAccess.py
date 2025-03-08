@@ -60,8 +60,7 @@ class IDataAccess():
     def read_scoreboards(self, scoreboard: Scoreboard) -> list[Scoreboard]:
         return self._data_access.read_scoreboards(scoreboard)
 
-    def update_scoreboard(self, scoreboard: Scoreboard):
-        self._data_access.update_scoreboard(scoreboard)
+    # kein update_scoreboard da kein Primary Key
 
     def delete_scoreboard(self, scoreboard: Scoreboard):
         self._data_access.delete_scoreboard(scoreboard)
