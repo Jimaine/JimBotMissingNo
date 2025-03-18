@@ -53,36 +53,25 @@ class Trainer(commands.Cog):
     @app_commands.command(name="trainer_add", description="add a new trainer")
     @app_commands.describe(discord_name='The discord name of the new trainer')
     async def trainer_add(self, interaction: discord.Interaction, discord_name: str, trainer_name: str = None):
-        is_created = await JimBotService.trainer_add(discord_name, created_by = interaction.user.name)
+        service_result = await JimBotService.trainer_add(discord_name, created_by = interaction.user.name)
         
-        if is_created:
-            await interaction.response.send_message(f"User {discord_name} created successfully")
-            if trainer_name is not None:
-                await JimBotService.trainer_update_name(discord_name, trainer_name)
-        else:
-            await interaction.response.send_message(f"Creating user {discord_name} faild")
+        await interaction.response.send_message(str(service_result))
+        if trainer_name is not None:
+            service_result = await JimBotService.trainer_update_name(discord_name, trainer_name)
+            await interaction.response.send_message(str(service_result))
 
     @app_commands.command(name="trainer_set_name", description="set the name of a trainer")
     @app_commands.describe(trainers='Trainers to choose from')
     async def trainer_set_name(self, interaction: discord.Interaction, trainers: str, new_trainer_name: str):
-        is_updated = await JimBotService.trainer_update_name(trainers, new_trainer_name)
-
-        if is_updated:
-            await interaction.response.send_message(f"Trainername of user {trainers} is set to {new_trainer_name}")
-        else:
-            await interaction.response.send_message(f"Updating the trainername of user {trainers} failed")
+        service_result = await JimBotService.trainer_update_name(trainers, new_trainer_name)
+        await interaction.response.send_message(str(service_result))
             
     @app_commands.command(name="trainer_set_is_active", description="set activity of a trainer")
     @app_commands.describe(trainers='Trainers to choose from', is_active='set is active')
     async def trainer_set_is_active(self, interaction: discord.Interaction, trainers: str, is_active: str):
         is_active = True if is_active == "True" else False
-        is_updated = await JimBotService.trainer_update_isActive(trainers, is_active)
-        
-        if is_updated:
-            status = "activated" if is_active else "deactivated"
-            await interaction.response.send_message(f"User {trainers} successfully {status}")
-        else:
-            await interaction.response.send_message(f"Activity change of user {trainers} failed")
+        service_result = await JimBotService.trainer_update_isActive(trainers, is_active)
+        await interaction.response.send_message(str(service_result))
 
     # autocompletes
     @trainer_set_is_active.autocomplete('trainers')

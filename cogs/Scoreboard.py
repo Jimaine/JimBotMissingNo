@@ -53,28 +53,19 @@ class Scoreboard(commands.Cog):
     @app_commands.command(name="scoreboard_battle", description="Add a battle to the scoreboard")
     @app_commands.describe(winner='Trainers who wins', looser='Trainers to choose from')
     async def scoreboard_battle(self, interaction: discord.Interaction, winner: str, looser: str):
-        is_updated = await JimBotService.scoreboard_battle(winner, looser, created_by = interaction.user.name)
-        
-        if is_updated:
-            await interaction.response.send_message(f"Scoreboard succeeded to add Points to {winner} as the winner and to the opponent {looser} for the active season")
-        else:
-            await interaction.response.send_message(f"Scoreboard failed to add points for the battle")
+        service_result = await JimBotService.scoreboard_battle(winner, looser, created_by = interaction.user.name)
+        await interaction.response.send_message(str(service_result))
 
     @app_commands.command(name="scoreboard_trade", description="Add a trade to the scoreboard")
     @app_commands.describe(trainer_one='Trainers to choose from', trainer_two='Trainers to choose from')
     async def scoreboard_trade(self, interaction: discord.Interaction, trainer_one: str, trainer_two: str):
-        is_updated = await JimBotService.scoreboard_trade(trainer_one, trainer_two, created_by = interaction.user.name)
-        
-        if is_updated:
-            await interaction.response.send_message(f"Scoreboard succeeded to add Points to {trainer_one} and {trainer_two} as Traders for the active season")
-        else:
-            await interaction.response.send_message(f"Scoreboard failed to add points for the trade")
+        service_result = await JimBotService.scoreboard_trade(trainer_one, trainer_two, created_by = interaction.user.name)
+        await interaction.response.send_message(str(service_result))
 
     @app_commands.command(name="scoreboard_show", description="Shows the results of a season")
     @app_commands.describe(season='Seasons to choose from')
     async def scoreboard_show(self, interaction: discord.Interaction, season: str = None):
-        scoreboard_results = await JimBotService.scoreboard_show(season)
-        
+        scoreboard_results = await JimBotService.scoreboard_show(season)     
         await interaction.response.send_message(scoreboard_results)
 
     # autocompletes

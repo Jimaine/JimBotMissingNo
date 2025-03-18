@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from Models.Enum.DataAccessOption import DataAccessOption
 from Models.Enum.ScoreboardAction import ScoreboardAction
 from DataAccess.IDataAccess import IDataAccess
+from Models.ServiceResult import ServiceResult
 from Models.Season import Season
 from Models.Trainer import Trainer
 from Models.Scoreboard import Scoreboard
@@ -112,64 +113,88 @@ async def on_raw_reaction_remove(payload):
     print("Do something when a reaction is removed")
 
 # trainer methods
-async def trainer_add(discord_name: str, created_by: str) -> bool:
+async def trainer_add(discord_name: str, created_by: str) -> ServiceResult:
+    serviceResult = ServiceResult(method_name="TRAINER HINZUFÜGEN", message=discord_name)
+
     try:
         with IDataAccess(_data_access_option) as data_access:
             data_access.create_trainer(Trainer(discord_name, is_active = True, created_by = created_by))
-        return True
     except Exception:
-        return False
+        serviceResult.is_successful = False
+    
+    return serviceResult
 
-async def trainer_update_name(discord_name: str, trainer_name: str) -> bool:
+async def trainer_update_name(discord_name: str, trainer_name: str) -> ServiceResult:
+    serviceResult = ServiceResult(method_name="TRAINER NAMEN ÄNDERN", message=discord_name + " wird zu " + trainer_name)
+
     try:
         with IDataAccess(_data_access_option) as data_access:
             trainer = data_access.read_trainers(Trainer(discord_name))
             if len(trainer) == 1:
                 trainer[0].name = trainer_name
                 data_access.update_trainer(trainer[0])
-        return True
     except Exception:
-        return False
+        serviceResult.is_successful = False
+    
+    return serviceResult
 
-async def trainer_update_isActive(discord_name: str, is_active: bool) -> bool:
+async def trainer_update_isActive(discord_name: str, is_active: bool) -> ServiceResult:
+    serviceResult = ServiceResult(method_name="TRAINER IN-/AKTIVIEREN", message=discord_name + " AKTIVIEREN" if is_active else discord_name + " INAKTIVIEREN")
+
     try:
         with IDataAccess(_data_access_option) as data_access:
             trainer = data_access.read_trainers(Trainer(discord_name))
             if len(trainer) == 1:
                 trainer[0].is_active = is_active
                 data_access.update_trainer(trainer[0])
-        return True
     except Exception:
-        return False
+        serviceResult.is_successful = False
+    
+    return serviceResult
 
 
 # season methods
-async def season_add(name: str, badge_points: int, created_by: str):
+async def season_add(name: str, badge_points: int, created_by: str) -> ServiceResult:
+    serviceResult = ServiceResult(method_name="SAISON HINZUFÜGEN", message=name)
+
     try:
         with IDataAccess(_data_access_option) as data_access:
             data_access.create_season(Season(name, badge_points, created_by = created_by))
-        return True
+            serviceResult.message = name
     except Exception:
-        return False
+        serviceResult.is_successful = False
+    
+    return serviceResult
 
-async def season_activate(name: str):
+async def season_activate(name: str) -> ServiceResult:
+    serviceResult = ServiceResult(method_name="SAISON AKTIVIEREN", message=name)
+
     try:
         with IDataAccess(_data_access_option) as data_access:
             seasons = data_access.read_seasons(None)
             for season in seasons:
                 season.is_active = True if season.name == name else False
                 data_access.update_season(season)
+
             seasons = data_access.read_seasons(Season(is_active = True))
-            return len(seasons) == 1
+            if len(seasons) != 1:
+                serviceResult.message += "Nicht genau eine Saison aktiviert"
+                serviceResult.is_successful = False
     except Exception:
-        return False
+        serviceResult.is_successful = False
+    
+    return serviceResult
 
 
 # scoreboard methods
-async def scoreboard_battle(winner: str, looser: str, created_by: str) -> bool:
+async def scoreboard_battle(winner: str, looser: str, created_by: str) -> ServiceResult:
+    serviceResult = ServiceResult(method_name="KAMPF HINZUFÜGEN", message=winner + " besiegt " + looser)
+
     try:
         if winner == looser:
-            return False
+            serviceResult.message += " - Trainer sind identisch!"
+            serviceResult.is_successful = False
+            return serviceResult
         
         with IDataAccess(_data_access_option) as data_access:
             season = await get_season_if_none(data_access)
@@ -177,16 +202,23 @@ async def scoreboard_battle(winner: str, looser: str, created_by: str) -> bool:
             data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = winner, action = ScoreboardAction.BATTLE_WIN, created_by = created_by))
             data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = looser, action = ScoreboardAction.BATTLE_LOOSE, created_by = created_by))
 
-            await scoreboard_attendance(data_access = data_access, trainer = winner, season = season, created_by = created_by)
-            await scoreboard_attendance(data_access = data_access, trainer = looser, season = season, created_by = created_by)
-        return True
+            attencdance_message = await scoreboard_attendance(data_access = data_access, trainer = winner, season = season, created_by = created_by)
+            serviceResult.message += attencdance_message
+            attencdance_message = await scoreboard_attendance(data_access = data_access, trainer = looser, season = season, created_by = created_by)
+            serviceResult.message += attencdance_message
     except Exception:
-        return False
+        serviceResult.is_successful = False
+    
+    return serviceResult
 
-async def scoreboard_trade(trainer_one: str, trainer_two: str, created_by: str) -> bool:
+async def scoreboard_trade(trainer_one: str, trainer_two: str, created_by: str) -> ServiceResult:
+    serviceResult = ServiceResult(method_name="TAUSCH HINZUFÜGEN", message=trainer_one + " tauscht mit " + trainer_two)
+
     try:
         if trainer_one == trainer_two:
-            return False
+            serviceResult.message += " - Trainer sind identisch!"
+            serviceResult.is_successful = False
+            return serviceResult
         
         last_season_week_begin = get_last_season_week_begin()
 
@@ -196,18 +228,22 @@ async def scoreboard_trade(trainer_one: str, trainer_two: str, created_by: str) 
             scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer_one, action = ScoreboardAction.TRADE))          
             if any(scoreboard.created_at > last_season_week_begin for scoreboard in scoreboards) == False:
                 data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = trainer_one, action = ScoreboardAction.TRADE, created_by = created_by))
-                await scoreboard_attendance(data_access = data_access, trainer = trainer_one, season = season, created_by = created_by)
+                attencdance_message = await scoreboard_attendance(data_access = data_access, trainer = trainer_one, season = season, created_by = created_by)
+                serviceResult.message += attencdance_message
 
             scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer_two, action = ScoreboardAction.TRADE))
             if any(scoreboard.created_at > last_season_week_begin for scoreboard in scoreboards) == False:
                 data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = trainer_two, action = ScoreboardAction.TRADE, created_by = created_by))
-                await scoreboard_attendance(data_access = data_access, trainer = trainer_two, season = season, created_by = created_by)
-        return True
+                attencdance_message = await scoreboard_attendance(data_access = data_access, trainer = trainer_two, season = season, created_by = created_by)
+                serviceResult.message += attencdance_message
     except Exception:
-        return False
+        serviceResult.is_successful = False
+    
+    return serviceResult
     
 async def scoreboard_show(season: str) -> str:
     scoreboard_results = ""
+
     try:
         with IDataAccess(_data_access_option) as data_access:
             season = await get_season_if_none(data_access, season)
@@ -222,21 +258,23 @@ async def scoreboard_show(season: str) -> str:
                     if trainers is not None and len(trainers) == 1:
                         scoreboard_results += f"**{trainers[0].name}** *({trainers[0].discord_name})*: {trainer_scoreboard.points}\n"
     except Exception:
-        scoreboard_results = "Scoreboard failed to show results"
+        scoreboard_results = "DATENBANK ist geflohen!"
 
     return scoreboard_results
 
 # helper methods
-async def scoreboard_attendance(data_access: IDataAccess, trainer: str, season: str, created_by: str) -> bool:
+async def scoreboard_attendance(data_access: IDataAccess, trainer: str, season: str, created_by: str) -> str:
     try:
         last_season_week_begin = get_last_season_week_begin()
         scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer, action = ScoreboardAction.ATTENDANCE))
         
         if any(scoreboard.created_at > last_season_week_begin for scoreboard in scoreboards) == False:
             data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = trainer, action = ScoreboardAction.ATTENDANCE, created_by = created_by))
-        return True
+            return f" ({trainer} ist anwesend)"
     except Exception:
-        return False
+        return ""
+    
+    return ""
     
 async def get_season_if_none(data_access: IDataAccess, season: str = None) -> str:
     if season is None:
