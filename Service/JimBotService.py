@@ -188,7 +188,7 @@ async def season_activate(name: str) -> ServiceResult:
 
 # scoreboard methods
 async def scoreboard_battle(winner: str, looser: str, created_by: str) -> ServiceResult:
-    serviceResult = ServiceResult(method_name="KAMPF HINZUFÜGEN", message=winner + " besiegt " + looser)
+    serviceResult = ServiceResult(method_name="KAMPF HINZUFÜGEN")
 
     try:
         if winner == looser:
@@ -199,12 +199,16 @@ async def scoreboard_battle(winner: str, looser: str, created_by: str) -> Servic
         with IDataAccess(_data_access_option) as data_access:
             season = await get_season_if_none(data_access)
 
+            full_trainer_name_winner = get_full_trainer_name(data_access, winner)
+            full_trainer_name_looser = get_full_trainer_name(data_access, looser)
+            serviceResult.message = full_trainer_name_winner + " besiegt " + full_trainer_name_looser
+
             data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = winner, action = ScoreboardAction.BATTLE_WIN, created_by = created_by))
             data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = looser, action = ScoreboardAction.BATTLE_LOOSE, created_by = created_by))
 
-            attencdance_message = await scoreboard_attendance(data_access = data_access, trainer = winner, season = season, created_by = created_by)
+            attencdance_message = await scoreboard_attendance(data_access = data_access, discord_name = winner, season = season, created_by = created_by)
             serviceResult.message += attencdance_message
-            attencdance_message = await scoreboard_attendance(data_access = data_access, trainer = looser, season = season, created_by = created_by)
+            attencdance_message = await scoreboard_attendance(data_access = data_access, discord_name = looser, season = season, created_by = created_by)
             serviceResult.message += attencdance_message
     except Exception:
         serviceResult.is_successful = False
@@ -212,7 +216,7 @@ async def scoreboard_battle(winner: str, looser: str, created_by: str) -> Servic
     return serviceResult
 
 async def scoreboard_trade(trainer_one: str, trainer_two: str, created_by: str) -> ServiceResult:
-    serviceResult = ServiceResult(method_name="TAUSCH HINZUFÜGEN", message=trainer_one + " tauscht mit " + trainer_two)
+    serviceResult = ServiceResult(method_name="TAUSCH HINZUFÜGEN")
 
     try:
         if trainer_one == trainer_two:
@@ -224,17 +228,21 @@ async def scoreboard_trade(trainer_one: str, trainer_two: str, created_by: str) 
 
         with IDataAccess(_data_access_option) as data_access: 
             season = await get_season_if_none(data_access)
+
+            full_trainer_name_one = get_full_trainer_name(data_access, trainer_one)
+            full_trainer_name_two = get_full_trainer_name(data_access, trainer_two)
+            serviceResult.message = full_trainer_name_one + " tauscht mit " + full_trainer_name_two
             
             scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer_one, action = ScoreboardAction.TRADE))          
             if any(scoreboard.created_at > last_season_week_begin for scoreboard in scoreboards) == False:
                 data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = trainer_one, action = ScoreboardAction.TRADE, created_by = created_by))
-                attencdance_message = await scoreboard_attendance(data_access = data_access, trainer = trainer_one, season = season, created_by = created_by)
+                attencdance_message = await scoreboard_attendance(data_access = data_access, discord_name = trainer_one, season = season, created_by = created_by)
                 serviceResult.message += attencdance_message
 
             scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer_two, action = ScoreboardAction.TRADE))
             if any(scoreboard.created_at > last_season_week_begin for scoreboard in scoreboards) == False:
                 data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = trainer_two, action = ScoreboardAction.TRADE, created_by = created_by))
-                attencdance_message = await scoreboard_attendance(data_access = data_access, trainer = trainer_two, season = season, created_by = created_by)
+                attencdance_message = await scoreboard_attendance(data_access = data_access, discord_name = trainer_two, season = season, created_by = created_by)
                 serviceResult.message += attencdance_message
     except Exception:
         serviceResult.is_successful = False
@@ -254,23 +262,23 @@ async def scoreboard_show(season: str) -> str:
                 trainer_scoreboards = group_season_trainer_sum_points(trainer_scoreboards)
                 trainer_scoreboards = sorted(trainer_scoreboards, key=lambda trainer_scoreboard: trainer_scoreboard.points, reverse=True)
                 for trainer_scoreboard in trainer_scoreboards:
-                    trainers = data_access.read_trainers(Trainer(discord_name = trainer_scoreboard.trainer_discord_name))
-                    if trainers is not None and len(trainers) == 1:
-                        scoreboard_results += f"**{trainers[0].name}** *({trainers[0].discord_name})*: {trainer_scoreboard.points}\n"
+                    full_trainer_name = get_full_trainer_name(data_access, trainer_scoreboard.trainer_discord_name)
+                    scoreboard_results += f"{full_trainer_name}: {trainer_scoreboard.points}\n"
     except Exception:
         scoreboard_results = "DATENBANK ist geflohen!"
 
     return scoreboard_results
 
 # helper methods
-async def scoreboard_attendance(data_access: IDataAccess, trainer: str, season: str, created_by: str) -> str:
+async def scoreboard_attendance(data_access: IDataAccess, discord_name: str, season: str, created_by: str) -> str:
     try:
         last_season_week_begin = get_last_season_week_begin()
-        scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=trainer, action = ScoreboardAction.ATTENDANCE))
+        scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season, trainer_discord_name=discord_name, action = ScoreboardAction.ATTENDANCE))
         
         if any(scoreboard.created_at > last_season_week_begin for scoreboard in scoreboards) == False:
-            data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = trainer, action = ScoreboardAction.ATTENDANCE, created_by = created_by))
-            return f" ({trainer} ist anwesend)"
+            data_access.create_scoreboard(Scoreboard(season, trainer_discord_name = discord_name, action = ScoreboardAction.ATTENDANCE, created_by = created_by))
+            full_trainer_name = get_full_trainer_name(data_access, discord_name)
+            return f"\r\n({full_trainer_name} ist anwesend)"
     except Exception:
         return ""
     
@@ -299,3 +307,10 @@ def group_season_trainer_sum_points(scoreboards: list[Scoreboard]) -> list[Score
             )
         grouped_scoreboards[key].points += scoreboard.points
     return list(grouped_scoreboards.values())
+
+def get_full_trainer_name(data_access: IDataAccess, discord_name: str) -> str:
+    trainers = data_access.read_trainers(Trainer(discord_name = discord_name))
+    if trainers is not None and len(trainers) == 1:
+        return f"**{trainers[0].name}** *({trainers[0].discord_name})*"
+        
+    return discord_name

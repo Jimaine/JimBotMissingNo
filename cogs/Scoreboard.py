@@ -84,4 +84,4 @@ class Scoreboard(commands.Cog):
 
         
 async def setup(bot):
-    await bot.add_cog(Scoreboard(bot), guilds=[discord.Object(id=jim_bot_secrets.discord_missing_no_test_guild_id)])
+    await bot.add_cog(Scoreboard(bot), guilds=[discord.Object(id=jim_bot_secrets.discord_missing_no_guild_id),discord.Object(id=jim_bot_secrets.discord_missing_no_test_guild_id)])

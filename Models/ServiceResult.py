@@ -6,7 +6,7 @@ class ServiceResult:
 
     def __str__(self):
         status = "DATENBANK ist besschrieben!" if self._is_successful else "Keine Wirkung auf DATENBANK!"
-        return f"MISSINGNO benutzt {self._method_name} gegen DATENBANK\r\n'{self.message}'\r\n{status}"
+        return f"MISSINGNO benutzt {self._method_name} gegen DATENBANK\r\n{self.message}\r\n{status}"
 
 
     @property
