@@ -7,14 +7,14 @@ from Models.JimBotSecrets import JimBotSecrets
 
 jim_bot_secrets = JimBotSecrets()
 
-class Season(commands.Cog):
-    # initialize season
+class SeasonCommands(commands.Cog):
+    # initialize SeasonCommands
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Season cog loaded')
+        print('SeasonCommands cog loaded')
 
     # static methods    
     @staticmethod
@@ -25,20 +25,6 @@ class Season(commands.Cog):
             season_choices.append(discord.app_commands.Choice(name=name, value=value))
 
         return season_choices
-
-    # commands
-    @commands.command()
-    async def sync_season(self, context) -> None:
-        try:
-            fmt = await context.bot.tree.sync(guild=context.guild)
-            await context.send(
-                f"Synced {len(fmt)} season commands to the current guild"
-            )
-        except Exception as exception:
-            await context.send(
-                f"Exception while syncing {exception}"
-            )
-        return
 
     # app commands
     @app_commands.command(name="season_add", description="add a new season")
@@ -61,4 +47,4 @@ class Season(commands.Cog):
 
         
 async def setup(bot):
-    await bot.add_cog(Season(bot), guilds=[discord.Object(id=jim_bot_secrets.discord_missing_no_guild_id),discord.Object(id=jim_bot_secrets.discord_missing_no_test_guild_id)])
+    await bot.add_cog(SeasonCommands(bot), guilds=[discord.Object(id=jim_bot_secrets.discord_missing_no_guild_id),discord.Object(id=jim_bot_secrets.discord_missing_no_test_guild_id)])

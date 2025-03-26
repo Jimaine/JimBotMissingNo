@@ -7,14 +7,14 @@ from Models.JimBotSecrets import JimBotSecrets
 
 jim_bot_secrets = JimBotSecrets()
 
-class Trainer(commands.Cog):
-    # initialize trainer
+class TrainerCommands(commands.Cog):
+    # initialize TrainerCommands
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print('Trainer cog loaded')
+        print('TrainerCommands cog loaded')
 
     # static methods
     @staticmethod
@@ -34,20 +34,6 @@ class Trainer(commands.Cog):
             is_active_choices.append(discord.app_commands.Choice(name=name, value=value))
 
         return is_active_choices
-          
-    # commands
-    @commands.command()
-    async def sync_trainer(self, context) -> None:
-        try:
-            fmt = await context.bot.tree.sync(guild=context.guild)
-            await context.send(
-                f"Synced {len(fmt)} trainer commands to the current guild"
-            )
-        except Exception as exception:
-            await context.send(
-                f"Exception while syncing {exception}"
-            )
-        return
     
     # app commands
     @app_commands.command(name="trainer_add", description="add a new trainer")
@@ -87,4 +73,4 @@ class Trainer(commands.Cog):
 
         
 async def setup(bot):
-    await bot.add_cog(Trainer(bot), guilds=[discord.Object(id=jim_bot_secrets.discord_missing_no_guild_id),discord.Object(id=jim_bot_secrets.discord_missing_no_test_guild_id)])
+    await bot.add_cog(TrainerCommands(bot), guilds=[discord.Object(id=jim_bot_secrets.discord_missing_no_guild_id),discord.Object(id=jim_bot_secrets.discord_missing_no_test_guild_id)])
