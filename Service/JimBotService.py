@@ -36,8 +36,8 @@ def get_trainer_choices(is_only_active_trainers: bool = False) -> dict:
 def get_is_active_choices() -> dict:
     choices = {}
 
-    choices["Yes"] = "True"
-    choices["No"] = "False"
+    choices["Ja"] = "True"
+    choices["Nein"] = "False"
 
     return choices
 
@@ -112,9 +112,30 @@ async def on_raw_reaction_remove(payload):
     '''
     print("Do something when a reaction is removed")
 
+# general methods
+async def help() -> ServiceResult:
+    serviceResult = ServiceResult(method_name="HILFSMECHANIK")
+    
+    serviceResult.is_successful = False
+    serviceResult.message = """### Commands
+        **.sync** - synchronisiert die Attacken mit dem Discord Server, falls die Attacken sich geändert haben
+        ### Slash Commands
+        **/hilfsmechanik** - Listet alle Attacken von MISSINGNO auf
+        **/trainer_hinzufuegen** - Fuege einen neuen Pokemon Trainer hinzu *(Optional Pokemon Trainer Name mit hinzufuegen)*
+        **/trainer_name_aendern** - Setze den Namen eines Pokemon Trainers
+        **/trainer_aktivitaet_setzen** - Ist der Pokemon Trainer in-/aktiv?
+        **/saison_hinzufuegen** - Fuege eine neue Saison hinzu
+        **/saison_aktivieren** - Aktiviere eine Saison
+        **/punktetabelle_kampf** - Fuege einen Pokemon-Kampf fuer die aktuelle Saison hinzu *(fuegt auch Anwesenheit des Pokemon Trainers automatisch hinzu)*
+        **/punktetabelle_tausch** - Fuege einen Karten-Tausch fuer die aktuelle Saison hinzu *(fuegt auch Anwesenheit des Pokemon Trainers automatisch hinzu)*
+        **/punktetabelle_anzeigen** - Zeigt die Punktetabelle fuer die aktuelle Saison an *(Optional andere Saison als die aktuelle Saison auswaehlbar)*
+    """.replace("        ", "")
+
+    return serviceResult
+
 # trainer methods
 async def trainer_add(discord_name: str, created_by: str) -> ServiceResult:
-    serviceResult = ServiceResult(method_name="TRAINER HINZUFÜGEN", message=discord_name)
+    serviceResult = ServiceResult(method_name="TRAINER_HINZUFUEGEN", message=discord_name)
 
     try:
         with IDataAccess(_data_access_option) as data_access:
@@ -125,7 +146,7 @@ async def trainer_add(discord_name: str, created_by: str) -> ServiceResult:
     return serviceResult
 
 async def trainer_update_name(discord_name: str, trainer_name: str) -> ServiceResult:
-    serviceResult = ServiceResult(method_name="TRAINER NAMEN ÄNDERN", message=discord_name + " wird zu " + trainer_name)
+    serviceResult = ServiceResult(method_name="TRAINER_NAME_AENDERN", message=discord_name + " wird zu " + trainer_name)
 
     try:
         with IDataAccess(_data_access_option) as data_access:
@@ -139,7 +160,7 @@ async def trainer_update_name(discord_name: str, trainer_name: str) -> ServiceRe
     return serviceResult
 
 async def trainer_update_isActive(discord_name: str, is_active: bool) -> ServiceResult:
-    serviceResult = ServiceResult(method_name="TRAINER IN-/AKTIVIEREN", message=discord_name + " AKTIVIEREN" if is_active else discord_name + " INAKTIVIEREN")
+    serviceResult = ServiceResult(method_name="TRAINER_AKTIVITAET_SETZEN", message=discord_name + " AKTIVIEREN" if is_active else discord_name + " INAKTIVIEREN")
 
     try:
         with IDataAccess(_data_access_option) as data_access:
@@ -155,7 +176,7 @@ async def trainer_update_isActive(discord_name: str, is_active: bool) -> Service
 
 # season methods
 async def season_add(name: str, badge_points: int, created_by: str) -> ServiceResult:
-    serviceResult = ServiceResult(method_name="SAISON HINZUFÜGEN", message=name)
+    serviceResult = ServiceResult(method_name="SAISON HINZUFUEGEN", message=name)
 
     try:
         with IDataAccess(_data_access_option) as data_access:
@@ -188,7 +209,7 @@ async def season_activate(name: str) -> ServiceResult:
 
 # scoreboard methods
 async def scoreboard_battle(winner: str, looser: str, created_by: str) -> ServiceResult:
-    serviceResult = ServiceResult(method_name="KAMPF HINZUFÜGEN")
+    serviceResult = ServiceResult(method_name="PUNKTETABELLE_KAMPF")
 
     try:
         if winner == looser:
@@ -216,7 +237,7 @@ async def scoreboard_battle(winner: str, looser: str, created_by: str) -> Servic
     return serviceResult
 
 async def scoreboard_trade(trainer_one: str, trainer_two: str, created_by: str) -> ServiceResult:
-    serviceResult = ServiceResult(method_name="TAUSCH HINZUFÜGEN")
+    serviceResult = ServiceResult(method_name="PUNKTETABELLE_TAUSCH")
 
     try:
         if trainer_one == trainer_two:
@@ -249,13 +270,14 @@ async def scoreboard_trade(trainer_one: str, trainer_two: str, created_by: str) 
     
     return serviceResult
     
-async def scoreboard_show(season: str) -> str:
-    scoreboard_results = ""
-
+async def scoreboard_show(season: str) -> ServiceResult:
+    serviceResult = ServiceResult(method_name="PUNKTETABELLE ANZEIGEN")
+    
+    serviceResult.is_successful = False
     try:
         with IDataAccess(_data_access_option) as data_access:
             season = await get_season_if_none(data_access, season)
-            scoreboard_results = f"## {season}:\n\n"
+            serviceResult.message = f"## {season}:\n\n"
             trainer_scoreboards = data_access.read_scoreboards(Scoreboard(season_name=season))
 
             if trainer_scoreboards is not None and len(trainer_scoreboards) > 0:
@@ -263,11 +285,11 @@ async def scoreboard_show(season: str) -> str:
                 trainer_scoreboards = sorted(trainer_scoreboards, key=lambda trainer_scoreboard: trainer_scoreboard.points, reverse=True)
                 for trainer_scoreboard in trainer_scoreboards:
                     full_trainer_name = get_full_trainer_name(data_access, trainer_scoreboard.trainer_discord_name)
-                    scoreboard_results += f"{full_trainer_name}: {trainer_scoreboard.points}\n"
+                    serviceResult.message += f"{full_trainer_name}: {trainer_scoreboard.points}\n"
     except Exception:
-        scoreboard_results = "DATENBANK ist geflohen!"
+        serviceResult.message = "DATENBANK ist geflohen!"
 
-    return scoreboard_results
+    return serviceResult
 
 # helper methods
 async def scoreboard_attendance(data_access: IDataAccess, discord_name: str, season: str, created_by: str) -> str:

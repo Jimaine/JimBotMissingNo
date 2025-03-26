@@ -22,7 +22,7 @@ bot = commands.Bot(command_prefix='.', intents=intents, default_guild_ids=[jim_b
 # bot events
 @bot.event
 async def on_ready():
-    print("A WILD MISSING NO APPEARS")
+    print("EIN WILDES MISSINGNO ERSCHEINT!")
 
 @bot.event
 async def on_member_join(member):
