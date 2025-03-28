@@ -5,7 +5,7 @@ class ServiceResult:
         self._is_successful = is_successful
 
     def __str__(self):
-        status = "DATENBANK ist besschrieben!" if self._is_successful else "Keine Auswirkungen auf DATENBANK!"
+        status = "DATENBANK ist beschrieben!" if self._is_successful else "Keine Auswirkungen auf DATENBANK!"
         return f"MISSINGNO benutzt {self._method_name} gegen DATENBANK\r\n{self.message}\r\n{status}"
 
 
